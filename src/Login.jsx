@@ -13,48 +13,63 @@ function Login() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [debugInfo, setDebugInfo] = useState([]);
     const navigate = useNavigate();
 
+    // Debug helper function
+    const logDebug = (message) => {
+        const timestamp = new Date().toISOString();
+        const newDebugInfo = [...debugInfo, `[${timestamp}] ${message}`];
+        setDebugInfo(newDebugInfo);
+        console.log(message);
+    };
+
     useEffect(() => {
-        // Handle Google sign-in redirect
-        getRedirectResult(auth)
-            .then((result) => {
+        logDebug("Login component mounted");
+        
+        const checkGoogleRedirect = async () => {
+            logDebug("Checking Google redirect result...");
+            try {
+                const result = await getRedirectResult(auth);
+                logDebug("Google redirect result:", JSON.stringify(result));
+                
                 if (result?.user) {
+                    logDebug("User logged in via Google redirect");
                     navigate("/home");
                 }
-            })
-            .catch((err) => {
-                console.error("Google redirect failed:", err.code, err.message);
-                setError(`Google sign-in failed: ${err.message}`);
-            });
+            } catch (err) {
+                logDebug(`Google redirect failed: ${err.code} - ${err.message}`);
+                setError(err.message || "Google sign-in failed unexpectedly.");
+            }
+        };
+        
+        checkGoogleRedirect();
     }, [navigate]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setError("");
         setLoading(true);
+        logDebug("Starting email/password login attempt");
 
         try {
+            // Log authentication state before attempt
+            const currentUser = auth.currentUser;
+            logDebug("Current Firebase auth state:", 
+                     currentUser ? "User already signed in" : "No user signed in");
+
             await signInWithEmailAndPassword(auth, email, password);
+            logDebug("Email/password authentication successful");
+            
+            // Verify login state after success
+            const newUser = auth.currentUser;
+            logDebug("New Firebase auth state:", 
+                     newUser ? JSON.stringify(newUser.providerData[0]) : "No user data");
+            
             navigate("/home");
         } catch (err) {
-            console.error("Login error:", err.code, err.message);
-            switch (err.code) {
-                case "auth/user-not-found":
-                    setError("User not found. Please check your email.");
-                    break;
-                case "auth/wrong-password":
-                    setError("Incorrect password. Please try again.");
-                    break;
-                case "auth/network-request-failed":
-                    setError("No internet connection. Please check your network.");
-                    break;
-                case "auth/too-many-requests":
-                    setError("Too many login attempts. Please wait a moment.");
-                    break;
-                default:
-                    setError(err.message || "An unexpected error occurred.");
-            }
+            logDebug(`Email/password login failed: ${JSON.stringify(err)}`);
+            setError(err.message || "An unexpected error occurred.");
         } finally {
             setLoading(false);
         }
@@ -62,14 +77,20 @@ function Login() {
 
     const handleGoogleLogin = async () => {
         setError("");
+        logDebug("Starting Google authentication flow");
+
         try {
+            // Log provider details
+            logDebug("Using Google provider:", JSON.stringify(googleProvider));
+            
             const result = await signInWithPopup(auth, googleProvider);
-            if (result.user) {
-                navigate("/home");
-            }
+            logDebug("Google sign-in successful", 
+                     JSON.stringify(result.user.providerData[0]));
+            
+            navigate("/home");
         } catch (err) {
-            console.error("Google sign-in error:", err.code, err.message);
-            setError(`Google sign-in failed: ${err.message}`);
+            logDebug(`Google sign-in failed: ${JSON.stringify(err)}`);
+            setError("Google sign-in failed unexpectedly.");
         }
     };
 
@@ -80,10 +101,18 @@ function Login() {
                     Login
                 </h2>
                 
-                {/* Enhanced error display */}
                 {error && (
                     <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md">
                         {error}
+                    </div>
+                )}
+
+                {/* Debug Information Display */}
+                {debugInfo.length > 0 && (
+                    <div className="mt-4 mb-6 p-4 bg-gray-50 rounded-lg overflow-auto max-h-[150px] font-mono text-sm">
+                        {debugInfo.map((log, index) => (
+                            <div key={index}>{log}</div>
+                        ))}
                     </div>
                 )}
 
@@ -108,7 +137,6 @@ function Login() {
                         autoComplete="current-password"
                     />
                     
-                    {/* Enhanced loading state */}
                     <button 
                         type="submit" 
                         disabled={loading}
@@ -120,7 +148,6 @@ function Login() {
                     </button>
                 </form>
 
-                {/* Enhanced Google button styling */}
                 <button 
                     onClick={handleGoogleLogin}
                     className="w-full mt-4 bg-red-500 text-white p-3 rounded-md hover:bg-red-600 transition-colors duration-200"
