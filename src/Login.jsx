@@ -1,58 +1,67 @@
-import React, { useState, useEffect } from 'react';
+
+
+import React, { useState, useEffect } from "react";
 import {
   signInWithEmailAndPassword,
+  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
-  GoogleAuthProvider
-} from 'firebase/auth';
-import { auth, googleProvider } from './firebase';
-import { useNavigate, Link } from 'react-router-dom';
+  GoogleAuthProvider,
+} from "firebase/auth";
+import { auth, googleProvider } from "./firebase";
+import { useNavigate, Link } from "react-router-dom";
 
 function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Handling Google sign-in redirect
     getRedirectResult(auth)
       .then((result) => {
         if (result?.user) {
-          navigate('/home');
+          navigate("/home");
         }
       })
       .catch((err) => {
-        console.error(err);
-        setError('Google sign-in failed. Please try again.');
+        console.error("Google redirect failed:", err);
+        setError("Google sign-in failed. Please try again.");
       });
-  }, [navigate]);
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate('/home');
+      navigate("/home");
     } catch (err) {
-      if (err.code === 'auth/user-not-found') {
-        setError('User not found. Please sign up.');
-      } else if (err.code === 'auth/wrong-password') {
-        setError('Invalid email or password.');
-      } else if (err.code === 'auth/invalid-email') {
-        setError('Invalid email format.');
+      console.error("Login error:", err);
+      if (err.code === "auth/user-not-found") {
+        setError("User not found. Please sign up.");
+      } else if (err.code === "auth/wrong-password") {
+        setError("Invalid email or password.");
+      } else if (err.code === "auth/invalid-email") {
+        setError("Invalid email format.");
       } else {
-        setError('An error occurred. Please try again.');
+        setError("An error occurred. Please try again.");
       }
     }
   };
 
   const handleGoogleLogin = async () => {
-    setError('');
+    setError("");
     try {
-      await signInWithRedirect(auth, googleProvider);
+      // Using Popup for smoother login (alternative: use `signInWithRedirect`)
+      const result = await signInWithPopup(auth, googleProvider);
+      if (result?.user) {
+        navigate("/home");
+      }
     } catch (err) {
-      console.error(err);
-      setError('Google sign-in failed. Please try again.');
+      console.error("Google sign-in error:", err);
+      setError("Google sign-in failed. Please try again.");
     }
   };
 
@@ -93,7 +102,7 @@ function Login() {
           Login with Google
         </button>
         <p className="text-center mt-4">
-          Don't have an account?{' '}
+          Don't have an account?{" "}
           <Link to="/signup" className="text-blue-600 hover:underline">
             Sign Up
           </Link>
