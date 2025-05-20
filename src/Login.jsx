@@ -29,6 +29,11 @@ function Login() {
         
         const checkGoogleRedirect = async () => {
             logDebug("Checking Google redirect result...");
+            
+            // Verify domain configuration
+            const currentDomain = window.location.hostname;
+            logDebug(`Current domain: ${currentDomain}`);
+            
             try {
                 const result = await getRedirectResult(auth);
                 logDebug("Google redirect result:", JSON.stringify(result));
@@ -38,7 +43,7 @@ function Login() {
                     navigate("/home");
                 }
             } catch (err) {
-                logDebug(`Google redirect failed: ${err.code} - ${err.message}`);
+                logDebug(`Google redirect failed: ${JSON.stringify(err)}`);
                 setError(err.message || "Google sign-in failed unexpectedly.");
             }
         };
@@ -53,7 +58,6 @@ function Login() {
         logDebug("Starting email/password login attempt");
 
         try {
-            // Log authentication state before attempt
             const currentUser = auth.currentUser;
             logDebug("Current Firebase auth state:", 
                      currentUser ? "User already signed in" : "No user signed in");
@@ -61,7 +65,6 @@ function Login() {
             await signInWithEmailAndPassword(auth, email, password);
             logDebug("Email/password authentication successful");
             
-            // Verify login state after success
             const newUser = auth.currentUser;
             logDebug("New Firebase auth state:", 
                      newUser ? JSON.stringify(newUser.providerData[0]) : "No user data");
@@ -80,7 +83,6 @@ function Login() {
         logDebug("Starting Google authentication flow");
 
         try {
-            // Log provider details
             logDebug("Using Google provider:", JSON.stringify(googleProvider));
             
             const result = await signInWithPopup(auth, googleProvider);
