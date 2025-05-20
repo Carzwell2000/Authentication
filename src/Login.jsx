@@ -1,11 +1,13 @@
+
+
+
 import React, { useState, useEffect } from 'react';
 import {
   signInWithEmailAndPassword,
-  signInWithPopup,
   signInWithRedirect,
   getRedirectResult
 } from 'firebase/auth';
-import { auth, googleProvider } from './firebase'; // make sure this is correct
+import { auth, googleProvider } from './firebase';
 import { useNavigate, Link } from 'react-router-dom';
 
 function Login() {
@@ -14,10 +16,7 @@ function Login() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
   useEffect(() => {
-    // Handle result from Google redirect sign-in
     getRedirectResult(auth)
       .then((result) => {
         if (result?.user) {
@@ -52,12 +51,7 @@ function Login() {
   const handleGoogleLogin = async () => {
     setError('');
     try {
-      if (isMobile) {
-        await signInWithRedirect(auth, googleProvider);
-      } else {
-        await signInWithPopup(auth, googleProvider);
-        navigate('/home');
-      }
+      await signInWithRedirect(auth, googleProvider);
     } catch (err) {
       console.error(err);
       setError('Google sign-in failed. Please try again.');
@@ -112,4 +106,3 @@ function Login() {
 }
 
 export default Login;
-
