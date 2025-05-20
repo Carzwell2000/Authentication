@@ -1,11 +1,9 @@
-
-
-
 import React, { useState, useEffect } from 'react';
 import {
   signInWithEmailAndPassword,
   signInWithRedirect,
-  getRedirectResult
+  getRedirectResult,
+  GoogleAuthProvider
 } from 'firebase/auth';
 import { auth, googleProvider } from './firebase';
 import { useNavigate, Link } from 'react-router-dom';

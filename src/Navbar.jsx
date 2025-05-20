@@ -4,9 +4,6 @@ import { Link } from "react-router-dom";
 function Navbar() {
   return (
     <div className="bg-blue-700 text-white">
-      <h1 className="text-2xl font-bold text-center py-4">
-        Chinhoyi University of Technology
-      </h1>
       <nav className="flex justify-between px-8 py-3 text-lg">
         <Link to="/home" className="hover:underline">
           Home
