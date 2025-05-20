@@ -1,6 +1,11 @@
-import React, { useState } from 'react';
-import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from './firebase';
+import React, { useState, useEffect } from 'react';
+import {
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult
+} from 'firebase/auth';
+import { auth, googleProvider } from './firebase'; // make sure this is correct
 import { useNavigate, Link } from 'react-router-dom';
 
 function Login() {
@@ -8,6 +13,22 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  useEffect(() => {
+    // Handle result from Google redirect sign-in
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          navigate('/home');
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setError('Google sign-in failed. Please try again.');
+      });
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -29,11 +50,17 @@ function Login() {
   };
 
   const handleGoogleLogin = async () => {
+    setError('');
     try {
-      await signInWithPopup(auth, googleProvider);
-      navigate('/home');
+      if (isMobile) {
+        await signInWithRedirect(auth, googleProvider);
+      } else {
+        await signInWithPopup(auth, googleProvider);
+        navigate('/home');
+      }
     } catch (err) {
-      setError('Google sign-in failed. Please try again or sign up.');
+      console.error(err);
+      setError('Google sign-in failed. Please try again.');
     }
   };
 
@@ -85,3 +112,4 @@ function Login() {
 }
 
 export default Login;
+
